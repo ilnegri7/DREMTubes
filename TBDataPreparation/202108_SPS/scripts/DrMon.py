@@ -9,6 +9,7 @@ import re
 import commands
 
 PathToData='/home/dreamtest/SPS.2021.08/'
+PathToLogs='/home/dreamtest/logs/'
 BLUBOLD='\033[94m\033[1m'
 BOLD   ='\033[1m'
 BLU    ='\033[94m'
@@ -66,6 +67,7 @@ class DrMon:
        "caloPos"    : self.DrawCaloCenterOfGravity,
        "caloTot"    : self.DrawTotalEnergyInCalo,
        "MuonOverPre": self.DrawMuonOverPre,
+       "PmtHitMaps" : self.PmtHitMaps,
     }
     self.cmdShCutsV = list(self.cmdShCuts)
     self.NumOfLinesOfThisFile()
@@ -101,6 +103,21 @@ class DrMon:
     cmd = 'wc -l ' + fname
     out = commands.getstatusoutput(cmd)[1]
     self.numOfLines = int(out.split()[0])
+  
+  ##### DrMon method #######
+  def DumpRateOfCurrentRun(self):
+    '''Dump the rate of the current rate'''
+    logfile = PathToLogs + "RateHistory.log"
+    if not os.path.isfile(logfile):
+      print RED, "[ERROR] File", fname, "not found", NOCOLOR
+      return
+    cmd = 'wc -l ' + fname
+    cmd = 'egrep "CEST|Rate|run" ' + logfile + ' | tail -5'
+    out = commands.getstatusoutput(cmd)[1]
+    print BLUBOLD
+    for l in out.split("\n"):
+      print l
+    print NOCOLOR
     
   ##### DrMon method #######
   def book1D(self, hname, bins, mi, ma, axTitle=""):
@@ -215,27 +232,27 @@ class DrMon:
   def hFillPmtHitMapS(self, event):
     adc = event.ADCs
     h = self.hDict['HitMap_S']
-    if adc[15] > 198: h.Fill(-1, 1)
-    if adc[14] > 190: h.Fill( 0, 1)
-    if adc[13] > 174: h.Fill( 1, 1)
-    if adc[12] > 219: h.Fill(-1, 0)
-    if adc[11] > 214: h.Fill( 1, 0)
-    if adc[10] > 236: h.Fill(-1,-1)
-    if adc[ 9] > 177: h.Fill( 0,-1)
-    if adc[ 8] > 191: h.Fill( 1,-1)
+    if adc[15] > 210: h.Fill(-1, 1)
+    if adc[14] > 210: h.Fill( 0, 1)
+    if adc[13] > 170: h.Fill( 1, 1)
+    if adc[12] > 234: h.Fill(-1, 0)
+    if adc[11] > 226: h.Fill( 1, 0)
+    if adc[10] > 246: h.Fill(-1,-1)
+    if adc[ 9] > 195: h.Fill( 0,-1)
+    if adc[ 8] > 220: h.Fill( 1,-1)
 
   ##### DrMon method #######
   def hFillPmtHitMapC(self, event):
     adc = event.ADCs
     h = self.hDict['HitMap_C']
-    if adc[ 7] > 165: h.Fill(-1, 1)
-    if adc[ 6] > 218: h.Fill( 0, 1)
-    if adc[ 5] > 174: h.Fill( 1, 1)
-    if adc[ 4] > 191: h.Fill(-1, 0)
-    if adc[ 3] > 229: h.Fill( 1, 0)
-    if adc[ 2] > 218: h.Fill(-1,-1)
-    if adc[ 1] > 232: h.Fill( 0,-1)
-    if adc[ 0] > 232: h.Fill( 1,-1)
+    if adc[ 7] > 178: h.Fill(-1, 1)
+    if adc[ 6] > 234: h.Fill( 0, 1)
+    if adc[ 5] > 194: h.Fill( 1, 1)
+    if adc[ 4] > 210: h.Fill(-1, 0)
+    if adc[ 3] > 242: h.Fill( 1, 0)
+    if adc[ 2] > 230: h.Fill(-1,-1)
+    if adc[ 1] > 250: h.Fill( 0,-1)
+    if adc[ 0] > 250: h.Fill( 1,-1)
 
   ##### DrMon method #######
   def hFill(self, event):
@@ -365,9 +382,10 @@ class DrMon:
     print "Other commands:", NOCOLOR
     print "   l 0/1     SetLogY"
     print "   z 0/1     SetLogZ"
-    print "   s         Dump file statistics"
     print "   c color   Change the color of all histos" 
     print "   r nEvts   Read other nEvts events"
+    print "   s         Dump file statistics"
+    print "   R         Dump the event rate of the CURRENT run"
     print "   q         Quit"
 
 
@@ -379,7 +397,7 @@ class DrMon:
       self.canvas = ROOT.TCanvas('c9', s+'PMT TOWERS',0 , 0, 800, 800)
       self.canvas.Divide(3,3)
     elif dim == 8: 
-      self.canvas = ROOT.TCanvas('c2', s+'IDEA-DR8', 0, 0, 800, 1000)
+      self.canvas = ROOT.TCanvas('c8', s+'IDEA-DR8', 0, 0, 800, 1000)
       self.canvas.Divide(2,4)
     elif dim == 4: 
       self.canvas = ROOT.TCanvas('c4', s+'IDEA-DR4', 0, 0, 800, 800)
@@ -411,14 +429,14 @@ class DrMon:
   def setLogZ(self, val):
     '''Set/unset logZ scale'''
     val = self.ToNumber(val)
-    if not val: 
+    if val == None: 
       return
     if self.canNum == 1:
       self.canvas.SetLogz(val)
     print "SetLogz =", val
 
   ##### DrMon method #######
-  def DrawDwcTDCs(self):
+  def DrawDwcTDCs(self, opt=""):
     '''Draw the DWC TDCs'''
     if self.canNum != 8:
       self.createCanvas(8)
@@ -428,7 +446,7 @@ class DrMon:
     self.canvas.Update()
 
   ##### DrMon method #######
-  def DrawMuonOverPre(self):
+  def DrawMuonOverPre(self, opt=""):
     '''Draw the muonTraker histo over preShower one'''
     if self.canNum != 1:
       self.createCanvas(1)
@@ -439,7 +457,7 @@ class DrMon:
     self.canvas.Update()
 
   ##### DrMon method #######
-  def DrawDwcBeamProfile(self):
+  def DrawDwcBeamProfile(self, opt=""):
     '''Draw the beam profile histograms'''
     if self.canNum != 2:
       self.createCanvas(2)
@@ -448,16 +466,16 @@ class DrMon:
     self.canvas.Update()
   
   ##### DrMon method #######
-  def DrawDwcBeamProfile_mm(self):
+  def DrawDwcBeamProfile_mm(self, opt=""):
     '''Draw the beam profile histograms in mm'''
     if self.canNum != 2:
       self.createCanvas(2)
-    self.canvas.cd(1);  self.hDict[ "dw1XY_mm" ].Draw('col')
-    self.canvas.cd(2);  self.hDict[ "dw2XY_mm" ].Draw('col')
+    self.canvas.cd(1);  self.hDict[ "dw1XY_mm" ].Draw('zcol')
+    self.canvas.cd(2);  self.hDict[ "dw2XY_mm" ].Draw('zcol')
     self.canvas.Update()
 
   ##### DrMon method #######
-  def DrawFers(self):
+  def DrawFers(self, opt=""):
     '''Draw the Fers channels'''
     if self.canNum != 6:
       self.createCanvas(6)
@@ -469,7 +487,7 @@ class DrMon:
     self.canvas.Update()
 
   ##### DrMon method #######
-  def DrawPmtAdcMapC(self):
+  def DrawPmtAdcMapC(self, opt=""):
     '''Draw the PMT map for Cherenkov channels'''
     # -- Channel---    -- ADC Ch ---   -- PadsNum --
     # | 8 | 7 | 6 |    | 7 | 6 | 5 |   | 1 | 2 | 3 |
@@ -487,7 +505,7 @@ class DrMon:
     self.canvas.Update()
   
   ##### DrMon method #######
-  def DrawPmtAdcMapS(self):
+  def DrawPmtAdcMapS(self, opt=""):
     '''Draw the PMT map for Scintillator channels'''
     # -- Channel---    -- ADC Ch ---      -- PadsNum --
     # | 8 | 7 | 6 |    | 15 | 14 | 13 |   | 1 | 2 | 3 |
@@ -505,7 +523,7 @@ class DrMon:
     self.canvas.Update()
   
   ##### DrMon method #######
-  def DrawCaloCenterOfGravity(self):
+  def DrawCaloCenterOfGravity(self, opt=""):
     '''Draw histograms about calorimeter center of gravity'''
     if self.canNum != 4:
       self.createCanvas(4)
@@ -516,12 +534,21 @@ class DrMon:
     self.canvas.Update()
   
   ##### DrMon method #######
-  def DrawTotalEnergyInCalo(self):
+  def DrawTotalEnergyInCalo(self, opt=""):
     '''Draw the total energy in calo PMT'''
     if self.canNum != 2:
       self.createCanvas(2)
     self.canvas.cd(1); self.hDict['PmtTotS'].Draw()
     self.canvas.cd(2); self.hDict['PmtTotC'].Draw()
+    self.canvas.Update()
+
+  ##### DrMon method #######
+  def PmtHitMaps(self, opt="lego2"):
+    '''Draw the PMT hit maps'''
+    if self.canNum != 2:
+      self.createCanvas(2)
+    self.canvas.cd(1); self.hDict['HitMap_S'].Draw(opt)
+    self.canvas.cd(2); self.hDict['HitMap_C'].Draw(opt)
     self.canvas.Update()
 
 
@@ -547,7 +574,7 @@ class DrMon:
     nBins=h.GetNbinsX()
     uFlow = h.GetBinContent(0)
     oFlow = h.GetBinContent(nBins+1)
-    if uFlow*oFlow > 0:
+    if uFlow + oFlow > 0:
       print BOLD
       print "Underflow:", h.GetBinContent(0)
       print "Overflow :", h.GetBinContent(nBins+1)
@@ -617,12 +644,13 @@ class DrMon:
       elif cmd == "s": self.DumpStats()
       elif cmd == "c": self.SetFillColor(opt) 
       elif cmd == "r": self.readMore(opt)      
+      elif cmd == "R": self.DumpRateOfCurrentRun()
       elif cmd in self.cmdShCuts:  # SHORTCUTS
-        self.cmdShCuts[cmd]()
+        self.cmdShCuts[cmd](opt)
       elif cmd.isdigit():          # SHORTCUTS WITH DIGITS
         hIdx = int(cmd)
         if hIdx < len(self.cmdShCuts): 
-          self.cmdShCuts[ self.cmdShCutsV[hIdx] ]()
+          self.cmdShCuts[ self.cmdShCutsV[hIdx] ](opt)
       else: 
         self.DrawSingleHisto(cmd, opt)
 
@@ -670,7 +698,10 @@ elif len(fname) < 1:
   fname = max(list_of_files, key=os.path.getctime)
 
 if not os.path.isfile(fname):
-  print RED, "[ERROR] File", fname, "not found", NOCOLOR
+  if os.path.isfile(fname+".bz2"):
+    print RED, "[ERROR] File", fname, "is zipped: you have to bunzip2 it manually", NOCOLOR
+  else:
+    print RED, "[ERROR] File", fname, "not found", NOCOLOR
   sys.exit(404)
 
 # Install signal handler to interrupt file reading
